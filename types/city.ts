@@ -15,4 +15,6 @@ export interface City {
   bestSeason: Season
   likes: number
   dislikes: number
+  description?: string
+  highlights?: string[]
 }

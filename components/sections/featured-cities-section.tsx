@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { CITIES } from "@/data/cities";
 import { Budget, Region, Season, Environment } from "@/types/city";
 import LikeDislikeButtons from "@/components/ui/like-dislike-buttons";
@@ -214,10 +215,14 @@ export default function FeaturedCitiesSection() {
         {/* City Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {sortedCities.map((city) => (
-            <div
+            <Link
               key={city.name}
-              className="bg-white border border-border-line rounded-lg overflow-hidden shadow-card hover:shadow-card-hover transition-shadow"
+              href={`/cities/${city.name}`}
+              className="group"
             >
+              <div
+                className="bg-white border border-border-line rounded-lg overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 group-hover:scale-105 cursor-pointer"
+              >
               {/* City Image Placeholder */}
               <div className="w-full h-40 bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-5xl">
                 {city.emoji}
@@ -272,7 +277,8 @@ export default function FeaturedCitiesSection() {
                   initialDislikes={city.dislikes}
                 />
               </div>
-            </div>
+              </div>
+            </Link>
           ))}
         </div>
 
