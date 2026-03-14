@@ -8,7 +8,8 @@
       "Bash(cd /tmp && printf 'No\\\\nNo\\\\n' | npx create-next-app@latest knc-homepage --typescript --tailwind --app --import-alias \"@/*\" --eslint --skip-install --no-git)",
       "Bash(cd /tmp && rm -rf knc-homepage && npm create next-app@latest knc-homepage -- --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --eslint --skip-install 2>&1 | grep -v \"^?\" | head -20)",
       "Bash(cd /tmp/knc-homepage && npm install 2>&1 | tail -20)",
-      "Bash(cd \"C:\\\\Users\\\\PC\\\\Claude_Code_Practice\\\\ch15-21. K_Nomads_list_project\" && npm install 2>&1 | head -50)"
+      "Bash(cd \"C:\\\\Users\\\\PC\\\\Claude_Code_Practice\\\\ch15-21. K_Nomads_list_project\" && npm install 2>&1 | head -50)",
+      "all"
     ]
   }
 }

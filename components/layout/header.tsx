@@ -18,24 +18,6 @@ export default function Header() {
             🇰🇷 KNC
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-text-main hover:text-primary">
-              Home
-            </Link>
-            <Link href="/explore" className="text-text-main hover:text-primary">
-              Explore
-            </Link>
-            <Link
-              href="/community"
-              className="text-text-main hover:text-primary"
-            >
-              Community
-            </Link>
-            <Link href="/about" className="text-text-main hover:text-primary">
-              About
-            </Link>
-          </nav>
 
           {/* Right Side - Desktop */}
           <div className="hidden md:flex items-center gap-4">
@@ -96,21 +78,6 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-t border-border-line">
             <nav className="flex flex-col p-4 gap-4">
-              <Link href="/" className="text-text-main hover:text-primary">
-                Home
-              </Link>
-              <Link href="/explore" className="text-text-main hover:text-primary">
-                Explore
-              </Link>
-              <Link
-                href="/community"
-                className="text-text-main hover:text-primary"
-              >
-                Community
-              </Link>
-              <Link href="/about" className="text-text-main hover:text-primary">
-                About
-              </Link>
               <div className="flex gap-2 mt-4">
                 <button className="flex-1 px-4 py-2 text-primary border border-primary rounded-lg">
                   로그인
