@@ -29,9 +29,10 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { cityName: string }
+  params: Promise<{ cityName: string }>
 }): Promise<Metadata> {
-  const city = CITIES.find((c) => c.name === params.cityName)
+  const { cityName } = await params
+  const city = CITIES.find((c) => c.name === cityName)
 
   if (!city) {
     return {
@@ -52,17 +53,18 @@ export async function generateMetadata({
 }
 
 interface CityDetailPageProps {
-  params: {
+  params: Promise<{
     cityName: string
-  }
+  }>
 }
 
 /**
  * 도시 상세페이지 메인 컴포넌트
  */
-export default function CityDetailPage({ params }: CityDetailPageProps) {
+export default async function CityDetailPage({ params }: CityDetailPageProps) {
+  const { cityName } = await params
   // 도시 찾기
-  const city = CITIES.find((c) => c.name === params.cityName)
+  const city = CITIES.find((c) => c.name === cityName)
 
   // 404 처리
   if (!city) {
