@@ -4,7 +4,6 @@ import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { CITIES } from "@/data/cities";
 import { Budget, Region, Season, Environment } from "@/types/city";
-import LikeDislikeButtons from "@/components/ui/like-dislike-buttons";
 
 type FilterState = {
   budget: Budget | ''
@@ -94,12 +93,12 @@ export default function FeaturedCitiesSection() {
           </h2>
 
           {/* Filter Bar */}
-          <div className="space-y-4 md:space-y-0 md:flex md:flex-wrap gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Budget Filter */}
             <div className="relative">
               <button
                 onClick={() => setShowBudgetDropdown(!showBudgetDropdown)}
-                className="px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
+                className="w-full px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
               >
                 예산 {filters.budget ? '✓' : '▼'}
               </button>
@@ -124,7 +123,7 @@ export default function FeaturedCitiesSection() {
             <div className="relative">
               <button
                 onClick={() => setShowRegionDropdown(!showRegionDropdown)}
-                className="px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
+                className="w-full px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
               >
                 지역 {filters.region ? '✓' : '▼'}
               </button>
@@ -149,7 +148,7 @@ export default function FeaturedCitiesSection() {
             <div className="relative">
               <button
                 onClick={() => setShowEnvironmentDropdown(!showEnvironmentDropdown)}
-                className="px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
+                className="w-full px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
               >
                 환경 {filters.environment.length > 0 ? '✓' : '▼'}
               </button>
@@ -174,7 +173,7 @@ export default function FeaturedCitiesSection() {
             <div className="relative">
               <button
                 onClick={() => setShowSeasonDropdown(!showSeasonDropdown)}
-                className="px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
+                className="w-full px-4 py-2 border border-border-line rounded-lg text-sm hover:bg-bg-light transition-colors"
               >
                 계절 {filters.season ? '✓' : '▼'}
               </button>
@@ -199,7 +198,7 @@ export default function FeaturedCitiesSection() {
             {(filters.budget || filters.region || filters.environment.length > 0 || filters.season) && (
               <button
                 onClick={resetFilters}
-                className="px-4 py-2 border border-secondary text-secondary rounded-lg text-sm hover:bg-secondary hover:text-white transition-colors"
+                className="col-span-1 sm:col-span-2 lg:col-span-4 px-4 py-2 border border-secondary text-secondary rounded-lg text-sm hover:bg-secondary hover:text-white transition-colors w-full"
               >
                 초기화
               </button>
@@ -214,7 +213,7 @@ export default function FeaturedCitiesSection() {
 
         {/* City Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {sortedCities.map((city) => (
+          {sortedCities.map((city, index) => (
             <Link
               key={city.name}
               href={`/cities/${city.name}`}
@@ -271,11 +270,16 @@ export default function FeaturedCitiesSection() {
                 </div>
 
                 {/* Like/Dislike Buttons */}
-                <LikeDislikeButtons
-                  cityId={city.name}
-                  initialLikes={city.likes}
-                  initialDislikes={city.dislikes}
-                />
+                <div className="flex justify-between items-center mt-4 pt-4 border-t border-border-line">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">👍</span>
+                    <span className="text-sm font-semibold text-primary">{city.likes}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-secondary">{city.dislikes}</span>
+                    <span className="text-lg">👎</span>
+                  </div>
+                </div>
               </div>
               </div>
             </Link>
