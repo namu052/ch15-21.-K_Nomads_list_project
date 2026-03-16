@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 
 interface LikeDislikeButtonsProps {
-  cityId: string
+  cityId: string      // UUID from Supabase
+  cityName: string    // for localStorage key
   initialLikes: number
   initialDislikes: number
 }
 
 export default function LikeDislikeButtons({
   cityId,
+  cityName,
   initialLikes,
   initialDislikes,
 }: LikeDislikeButtonsProps) {
@@ -17,72 +20,82 @@ export default function LikeDislikeButtons({
   const [likeCount, setLikeCount] = useState(initialLikes)
   const [dislikeCount, setDislikeCount] = useState(initialDislikes)
   const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  // Initialize from localStorage on mount
   useEffect(() => {
-    const storedVote = localStorage.getItem(`knc_vote_${cityId}`)
+    const storedVote = localStorage.getItem(`knc_vote_${cityName}`)
     if (storedVote === 'like' || storedVote === 'dislike') {
       setVote(storedVote)
     }
     setMounted(true)
-  }, [cityId])
+  }, [cityName])
 
-  const handleLike = () => {
+  const handleLike = async () => {
+    if (loading) return
+    setLoading(true)
+
     let newVote: 'like' | 'dislike' | null = null
     let newLikeCount = likeCount
     let newDislikeCount = dislikeCount
 
     if (vote === 'like') {
-      // Deselect like
+      // 좋아요 취소
       newVote = null
       newLikeCount = likeCount - 1
+      await supabase.rpc('decrement_likes', { city_id: cityId })
     } else if (vote === 'dislike') {
-      // Switch from dislike to like
+      // 싫어요 → 좋아요 전환
       newVote = 'like'
       newDislikeCount = dislikeCount - 1
       newLikeCount = likeCount + 1
+      await supabase.rpc('decrement_dislikes', { city_id: cityId })
+      await supabase.rpc('increment_likes', { city_id: cityId })
     } else {
-      // Select like
+      // 좋아요 선택
       newVote = 'like'
       newLikeCount = likeCount + 1
+      await supabase.rpc('increment_likes', { city_id: cityId })
     }
 
     setVote(newVote)
     setLikeCount(newLikeCount)
     setDislikeCount(newDislikeCount)
-    localStorage.setItem(
-      `knc_vote_${cityId}`,
-      newVote === null ? '' : newVote
-    )
+    localStorage.setItem(`knc_vote_${cityName}`, newVote ?? '')
+    setLoading(false)
   }
 
-  const handleDislike = () => {
+  const handleDislike = async () => {
+    if (loading) return
+    setLoading(true)
+
     let newVote: 'like' | 'dislike' | null = null
     let newLikeCount = likeCount
     let newDislikeCount = dislikeCount
 
     if (vote === 'dislike') {
-      // Deselect dislike
+      // 싫어요 취소
       newVote = null
       newDislikeCount = dislikeCount - 1
+      await supabase.rpc('decrement_dislikes', { city_id: cityId })
     } else if (vote === 'like') {
-      // Switch from like to dislike
+      // 좋아요 → 싫어요 전환
       newVote = 'dislike'
       newLikeCount = likeCount - 1
       newDislikeCount = dislikeCount + 1
+      await supabase.rpc('decrement_likes', { city_id: cityId })
+      await supabase.rpc('increment_dislikes', { city_id: cityId })
     } else {
-      // Select dislike
+      // 싫어요 선택
       newVote = 'dislike'
       newDislikeCount = dislikeCount + 1
+      await supabase.rpc('increment_dislikes', { city_id: cityId })
     }
 
     setVote(newVote)
     setLikeCount(newLikeCount)
     setDislikeCount(newDislikeCount)
-    localStorage.setItem(
-      `knc_vote_${cityId}`,
-      newVote === null ? '' : newVote
-    )
+    localStorage.setItem(`knc_vote_${cityName}`, newVote ?? '')
+    setLoading(false)
   }
 
   if (!mounted) {
@@ -93,7 +106,8 @@ export default function LikeDislikeButtons({
     <div className="flex gap-6 mt-4 pt-4 border-t border-border-line">
       <button
         onClick={handleLike}
-        className={`flex items-center gap-2 transition-colors ${
+        disabled={loading}
+        className={`flex items-center gap-2 transition-colors disabled:opacity-50 ${
           vote === 'like'
             ? 'text-primary font-semibold'
             : 'text-gray-400 hover:text-gray-600'
@@ -105,7 +119,8 @@ export default function LikeDislikeButtons({
 
       <button
         onClick={handleDislike}
-        className={`flex items-center gap-2 transition-colors ${
+        disabled={loading}
+        className={`flex items-center gap-2 transition-colors disabled:opacity-50 ${
           vote === 'dislike'
             ? 'text-secondary font-semibold'
             : 'text-gray-400 hover:text-gray-600'

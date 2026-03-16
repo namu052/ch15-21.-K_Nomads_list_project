@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { CITIES } from "@/data/cities";
-import { Budget, Region, Season, Environment } from "@/types/city";
+import { supabase } from '@/lib/supabase'
+import { rowToCity } from '@/lib/cityMapper'
+import { City, Budget, Region, Season, Environment } from '@/types/city'
 
 type FilterState = {
   budget: Budget | ''
@@ -13,6 +14,9 @@ type FilterState = {
 }
 
 export default function FeaturedCitiesSection() {
+  const [cities, setCities] = useState<City[]>([])
+  const [loading, setLoading] = useState(true)
+
   const [filters, setFilters] = useState<FilterState>({
     budget: '',
     region: '',
@@ -30,9 +34,24 @@ export default function FeaturedCitiesSection() {
   const environmentOptions: Environment[] = ['자연친화', '도심선호', '카페작업', '코워킹 필수']
   const seasonOptions: (Season | '')[] = ['', '봄', '여름', '가을', '겨울']
 
+  useEffect(() => {
+    async function fetchCities() {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('*')
+        .order('likes', { ascending: false })
+
+      if (!error && data) {
+        setCities(data.map(rowToCity))
+      }
+      setLoading(false)
+    }
+    fetchCities()
+  }, [])
+
   // 필터링 로직
   const filteredCities = useMemo(() => {
-    return CITIES.filter(city => {
+    return cities.filter(city => {
       if (filters.budget && city.budget !== filters.budget) return false
       if (filters.region && city.region !== filters.region) return false
       if (filters.environment.length > 0) {
@@ -43,7 +62,7 @@ export default function FeaturedCitiesSection() {
       if (filters.season && city.bestSeason !== filters.season) return false
       return true
     })
-  }, [filters])
+  }, [filters, cities])
 
   // 정렬 로직 (좋아요 순)
   const sortedCities = useMemo(() => {
@@ -207,87 +226,105 @@ export default function FeaturedCitiesSection() {
 
           {/* Result Count */}
           <p className="mt-4 text-sm text-text-sub">
-            도시 {sortedCities.length}개 표시
+            {loading ? '불러오는 중...' : `도시 ${sortedCities.length}개 표시`}
           </p>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="bg-white border border-border-line rounded-lg overflow-hidden shadow-card animate-pulse">
+                <div className="w-full h-40 bg-gray-200" />
+                <div className="p-4 space-y-3">
+                  <div className="h-6 bg-gray-200 rounded w-1/2" />
+                  <div className="h-20 bg-gray-100 rounded" />
+                  <div className="h-16 bg-gray-100 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* City Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {sortedCities.map((city, index) => (
-            <Link
-              key={city.name}
-              href={`/cities/${city.name}`}
-              className="group"
-            >
-              <div
-                className="bg-white border border-border-line rounded-lg overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 group-hover:scale-105 cursor-pointer"
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {sortedCities.map((city) => (
+              <Link
+                key={city.name}
+                href={`/cities/${city.name}`}
+                className="group"
               >
-              {/* City Image Placeholder */}
-              <div className="w-full h-40 bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-5xl">
-                {city.emoji}
-              </div>
-
-              {/* City Info */}
-              <div className="p-4 space-y-3">
-                <h3 className="text-2xl font-bold text-text-main">
-                  {city.name}
-                </h3>
-
-                {/* Filter Information */}
-                <div className="space-y-2 text-xs text-text-sub border-t border-b border-border-line py-3">
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5">🏷️</span>
-                    <span>예산: <span className="font-medium text-text-main">{city.budget}</span></span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5">📍</span>
-                    <span>지역: <span className="font-medium text-text-main">{city.region}</span></span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5">🌿</span>
-                    <span>환경: <span className="font-medium text-text-main">{city.environment.join(', ')}</span></span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <span className="mt-0.5">🌸</span>
-                    <span>최고계절: <span className="font-medium text-text-main">{city.bestSeason}</span></span>
-                  </div>
+                <div
+                  className="bg-white border border-border-line rounded-lg overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 group-hover:scale-105 cursor-pointer"
+                >
+                {/* City Image Placeholder */}
+                <div className="w-full h-40 bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-5xl">
+                  {city.emoji}
                 </div>
 
-                {/* Details */}
-                <div className="space-y-2 text-sm text-text-sub">
-                  <div className="flex items-center gap-2">
-                    <span>💵</span>
-                    <span>월 생활비 {city.cost}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>📡</span>
-                    <span>인터넷 {city.internet}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>👥</span>
-                    <span>노마드 {city.nomads}</span>
-                  </div>
-                </div>
+                {/* City Info */}
+                <div className="p-4 space-y-3">
+                  <h3 className="text-2xl font-bold text-text-main">
+                    {city.name}
+                  </h3>
 
-                {/* Like/Dislike Buttons */}
-                <div className="flex justify-between items-center mt-4 pt-4 border-t border-border-line">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">👍</span>
-                    <span className="text-sm font-semibold text-primary">{city.likes}</span>
+                  {/* Filter Information */}
+                  <div className="space-y-2 text-xs text-text-sub border-t border-b border-border-line py-3">
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5">🏷️</span>
+                      <span>예산: <span className="font-medium text-text-main">{city.budget}</span></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5">📍</span>
+                      <span>지역: <span className="font-medium text-text-main">{city.region}</span></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5">🌿</span>
+                      <span>환경: <span className="font-medium text-text-main">{city.environment.join(', ')}</span></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="mt-0.5">🌸</span>
+                      <span>최고계절: <span className="font-medium text-text-main">{city.bestSeason}</span></span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-secondary">{city.dislikes}</span>
-                    <span className="text-lg">👎</span>
+
+                  {/* Details */}
+                  <div className="space-y-2 text-sm text-text-sub">
+                    <div className="flex items-center gap-2">
+                      <span>💵</span>
+                      <span>월 생활비 {city.cost}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>📡</span>
+                      <span>인터넷 {city.internet}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>👥</span>
+                      <span>노마드 {city.nomads}</span>
+                    </div>
+                  </div>
+
+                  {/* Like/Dislike Counts */}
+                  <div className="flex justify-between items-center mt-4 pt-4 border-t border-border-line">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">👍</span>
+                      <span className="text-sm font-semibold text-primary">{city.likes}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-secondary">{city.dislikes}</span>
+                      <span className="text-lg">👎</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Empty State */}
-        {sortedCities.length === 0 && (
+        {!loading && sortedCities.length === 0 && (
           <div className="text-center py-12">
             <p className="text-text-sub text-lg">조건에 맞는 도시가 없습니다.</p>
             <button

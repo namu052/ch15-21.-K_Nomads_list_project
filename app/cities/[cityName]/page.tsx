@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { CITIES } from '@/data/cities'
-import { City } from '@/types/city'
+import { supabase } from '@/lib/supabase'
+import { rowToCity } from '@/lib/cityMapper'
 import CityDetailHeader from '@/components/cities/CityDetailHeader'
 import CityHeroSection from '@/components/cities/CityHeroSection'
 import CityStats from '@/components/cities/CityStats'
@@ -12,29 +12,23 @@ import LikeDislikeButtons from '@/components/ui/like-dislike-buttons'
 import RelatedCities from '@/components/cities/RelatedCities'
 import Footer from '@/components/layout/footer'
 
-/**
- * 정적 매개변수 생성
- * 빌드 타임에 모든 도시 페이지를 사전 생성
- * 예: /cities/부산, /cities/대구, ...
- */
-export async function generateStaticParams() {
-  return CITIES.map((city) => ({
-    cityName: city.name,
-  }))
-}
+export const dynamic = 'force-dynamic'
 
-/**
- * SEO 메타데이터 동적 생성
- */
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ cityName: string }>
 }): Promise<Metadata> {
   const { cityName } = await params
-  const city = CITIES.find((c) => c.name === cityName)
+  const decodedName = decodeURIComponent(cityName)
 
-  if (!city) {
+  const { data } = await supabase
+    .from('cities')
+    .select('name, cost, internet, nomads')
+    .eq('name', decodedName)
+    .single()
+
+  if (!data) {
     return {
       title: '도시를 찾을 수 없습니다',
       description: '요청하신 도시 정보가 없습니다.',
@@ -42,11 +36,11 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${city.name} - Korean Nomad Cities`,
-    description: `${city.name}의 노마드 정보: 생활비 ${city.cost}, 인터넷 ${city.internet}, 노마드 ${city.nomads}`,
+    title: `${data.name} - Korean Nomad Cities`,
+    description: `${data.name}의 노마드 정보: 생활비 ${data.cost}, 인터넷 ${data.internet}, 노마드 ${data.nomads}`,
     openGraph: {
-      title: city.name,
-      description: `${city.name} 도시 상세정보`,
+      title: data.name,
+      description: `${data.name} 도시 상세정보`,
       type: 'website',
     },
   }
@@ -58,18 +52,21 @@ interface CityDetailPageProps {
   }>
 }
 
-/**
- * 도시 상세페이지 메인 컴포넌트
- */
 export default async function CityDetailPage({ params }: CityDetailPageProps) {
   const { cityName } = await params
-  // 도시 찾기
-  const city = CITIES.find((c) => c.name === cityName)
+  const decodedName = decodeURIComponent(cityName)
 
-  // 404 처리
-  if (!city) {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('name', decodedName)
+    .single()
+
+  if (error || !data) {
     notFound()
   }
+
+  const city = rowToCity(data)
 
   return (
     <main className="w-full">
@@ -99,7 +96,8 @@ export default async function CityDetailPage({ params }: CityDetailPageProps) {
           </h3>
           <div className="max-w-sm mx-auto">
             <LikeDislikeButtons
-              cityId={city.name}
+              cityId={city.id!}
+              cityName={city.name}
               initialLikes={city.likes}
               initialDislikes={city.dislikes}
             />

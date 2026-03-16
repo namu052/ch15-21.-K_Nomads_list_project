@@ -1,25 +1,34 @@
 import Link from 'next/link'
-import { CITIES } from '@/data/cities'
+import { supabase } from '@/lib/supabase'
+import { rowToCity } from '@/lib/cityMapper'
 import { City } from '@/types/city'
 
 interface RelatedCitiesProps {
   currentCity: City
 }
 
-export default function RelatedCities({ currentCity }: RelatedCitiesProps) {
-  // 같은 지역의 도시들 찾기
-  const relatedCities = CITIES.filter(
-    (city) => city.region === currentCity.region && city.name !== currentCity.name
-  )
-    .slice(0, 4) // 최대 4개
+export default async function RelatedCities({ currentCity }: RelatedCitiesProps) {
+  // 같은 지역의 도시들 먼저 찾기
+  const { data: sameRegion } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('region', currentCity.region)
+    .neq('name', currentCity.name)
+    .limit(4)
 
-  // 같은 지역의 도시가 없으면 같은 예산 대역의 도시들 찾기
-  const finalRelated =
-    relatedCities.length > 0
-      ? relatedCities
-      : CITIES.filter(
-          (city) => city.budget === currentCity.budget && city.name !== currentCity.name
-        ).slice(0, 4)
+  let finalRelated = (sameRegion ?? []).map(rowToCity)
+
+  // 같은 지역이 없으면 같은 예산 대역 도시들 찾기
+  if (finalRelated.length === 0) {
+    const { data: sameBudget } = await supabase
+      .from('cities')
+      .select('*')
+      .eq('budget', currentCity.budget)
+      .neq('name', currentCity.name)
+      .limit(4)
+
+    finalRelated = (sameBudget ?? []).map(rowToCity)
+  }
 
   if (finalRelated.length === 0) {
     return null
